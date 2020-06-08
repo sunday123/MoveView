@@ -27,7 +27,8 @@
 
 @interface ViewController (){
     CGPoint startPoint;
-
+    Boolean isMoveing;
+    NSString *moveStr;
 }
 
 @end
@@ -37,7 +38,7 @@
 
 
 - (void)viewDidLoad {
-   
+    isMoveing=false;
     [super viewDidLoad];
     for (UIView *v in self.view.subviews) {
         [v removeFromSuperview];
@@ -67,7 +68,7 @@
                                                                                                     action:@selector(doMoveAction:)];
             [btn addGestureRecognizer:panGestureRecognizer];
             [btn addTarget:self action:@selector(addClick:) forControlEvents:UIControlEventTouchUpInside];
-//          [btn removeGestureRecognizer:panGestureRecognizer];
+            [btn removeGestureRecognizer:panGestureRecognizer];
             [self.view addSubview:btn];
              
         }
@@ -79,16 +80,19 @@
 -(void)addClick:(UIButton *)sender{
     NSLog(@"点击了:%@",sender.titleLabel.text);
 }
-
+#pragma mark - 移动拖拽按钮事件
 -(void)doMoveAction:(UIPanGestureRecognizer *)recognizer{
-
+    UIButton *btn =(id)recognizer.view;
+    if (isMoveing && btn.titleLabel.text !=moveStr) {
+        return;
+    }
     
     // Figure out where the user is trying to drag the view.
     
     CGPoint translation = [recognizer translationInView:self.view];
     CGPoint newCenter = CGPointMake(recognizer.view.center.x+ translation.x,
                                     recognizer.view.center.y + translation.y);
-//    屏幕范围：
+//    限制屏幕范围：
     newCenter.y = MAX(recognizer.view.frame.size.height/2, newCenter.y);
     newCenter.y = MIN(self.view.frame.size.height - recognizer.view.frame.size.height/2, newCenter.y);
     newCenter.x = MAX(recognizer.view.frame.size.width/2, newCenter.x);
@@ -99,8 +103,12 @@
     
     if(recognizer.state==UIGestureRecognizerStateBegan){
 //       NSLog(@"开始时坐标x:%f y:%f",newCenter.x,newCenter.y);
+        moveStr=btn.titleLabel.text;
+        isMoveing=true;
         startPoint = newCenter;
     }else if(recognizer.state==UIGestureRecognizerStateEnded){
+        isMoveing=false;
+        moveStr=NULL;
 //       NSLog(@"结束时坐标x:%f y:%f",newCenter.x,newCenter.y);
         Boolean change=false;
         CGFloat ex =newCenter.x,ey=newCenter.y;
@@ -127,10 +135,10 @@
                     //偏差5都认为相等
                     CGFloat diff =10;
                     if ((startPoint.x-ex>diff && startPoint.y-ey>diff)||(ex>(startPoint.x+diff) && (ey+diff)<startPoint.y) ||(fabs(ex-startPoint.x)<=diff && (ey+diff)<startPoint.y)|| (fabs(ey-startPoint.y)<=diff && (ex+diff) <startPoint.x) ) {
-                        NSLog(@"前移");
+//                        NSLog(@"前移");
                         preMove=true;
                     }else{
-                        NSLog(@"后移");
+//                        NSLog(@"后移");
                         preMove=false;
                     }
                     NSLog(@"  %d  | %ld ",i+1,(long)recognizer.view.tag);
@@ -151,8 +159,6 @@
                                [v setTag:tag2];
                                tag2++;
                             }
- 
-                            
                             long cTag =v.tag-1;
                             NSInteger row2 = cTag / COL_COUNT+1;
                             NSInteger col2 = cTag % COL_COUNT;
@@ -164,29 +170,17 @@
                     }
                     
                     [recognizer.view setTag:i+1];
-                    
                     CGPoint newPoint = CGPointMake(PIC_WIDTH*0.5+picX,PIC_HEIGHT*0.5+picY);
                     recognizer.view.center =newPoint;
-                    
-                    
-                    
                     break;//退出for
                 }
-                
- 
         }
         if(change ==false){
+            NSLog(@"false");
              recognizer.view.center= startPoint;
          }
-        
     }
-        
-    
-    
-    
     [recognizer setTranslation:CGPointZero inView:self.view];
-
-    
 }
 
 - (void)didReceiveMemoryWarning {
